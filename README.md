@@ -93,13 +93,11 @@ See `backend/.env.example`.
 6. Run `/api/seed` only in staging/demo environments, not production.
 
 
-### Vercel deployment
+### Vercel frontend deployment
 
-This repository contains multiple deployable services, so the root `vercel.json` uses Vercel's `experimentalServices` configuration. The Vite React frontend is served from `frontend/` at `/`, and the FastAPI backend is served from `backend/` at `/_/backend`.
+This repository keeps the React app in `frontend/`. If you deploy the repository root to Vercel, keep `vercel.json` committed so Vercel runs `cd frontend && npm run build`, publishes `frontend/dist`, and rewrites client-side routes to `index.html`. Without this root-level configuration, Vercel can deploy the repo root with no static output and show `404: NOT_FOUND`.
 
-For the bundled Vercel deployment, set `VITE_API_URL=/_/backend/api` so the frontend calls the backend service mounted by `vercel.json`. If the FastAPI backend is hosted separately, set `VITE_API_URL` to that public backend URL instead, for example `https://api.luvtrader.com/api`.
-
-If you ever deploy only the frontend as its own Vercel project, set that Vercel project's root directory to `frontend/` and still configure `VITE_API_URL` to point at the separately hosted FastAPI backend.
+Set `VITE_API_URL` in Vercel project environment variables to the public FastAPI backend URL, for example `https://api.luvtrader.com/api`.
 
 ## DNS for clients.luvtrader.com
 
