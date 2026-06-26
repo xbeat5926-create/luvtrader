@@ -88,7 +88,7 @@ See `backend/.env.example`.
 1. Provision MongoDB Atlas or a managed Mongo-compatible database.
 2. Deploy FastAPI with `uvicorn main:app --host 0.0.0.0 --port $PORT` behind HTTPS.
 3. Deploy the Vite build (`npm run build`) to static hosting.
-4. Set `VITE_API_URL` for your deployment target; see the Vercel deployment notes below for bundled-service routing.
+4. Set `VITE_API_URL` to the public backend `/api` URL.
 5. Set a strong `JWT_SECRET` and keep `EMAIL_MODE=preview` until email delivery is tested.
 6. Run `/api/seed` only in staging/demo environments, not production.
 
