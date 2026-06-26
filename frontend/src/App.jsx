@@ -1,93 +1,25 @@
-import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import './styles.css';
-
-const API_URL = import.meta.env.VITE_API_URL || '/_/backend/api';
-
-const demoUsers = [
-  { role: 'Admin', email: 'admin@luvtrader.com' },
-  { role: 'Operations', email: 'ops@luvtrader.com' },
-  { role: 'Client', email: 'client@example.com' },
-];
-
-const cards = [
-  { label: 'Active boards', value: '12', detail: 'Operations-ready clients' },
-  { label: 'Sold this month', value: '$4,850', detail: 'Running sold total' },
-  { label: 'Open flags', value: '3', detail: 'Needs owner review' },
-  { label: 'Messages', value: '18', detail: 'Previewed or sent' },
-];
-
-const clients = [
-  { name: 'Maya Johnson', status: 'active', base: 'DAL', balance: '$350 due' },
-  { name: 'Chris Rivera', status: 'single month', base: 'PHX', balance: '$125 credit' },
-  { name: 'Taylor Smith', status: 'TAP', base: 'HOU', balance: '$0' },
-  { name: 'Jordan Lee', status: 'TAP retainer', base: 'LAS', balance: '$75 due' },
-  { name: 'Avery Brooks', status: 'paused', base: 'DEN', balance: '$0' },
-];
-
-function App() {
-  const [role, setRole] = useState('Admin');
-  const visibleClients = useMemo(() => {
-    if (role === 'Operations') {
-      return clients.filter((client) => ['active', 'single month'].includes(client.status));
-    }
-    if (role === 'Client') {
-      return clients.slice(0, 1);
-    }
-    return clients;
-  }, [role]);
-
-  return (
-    <main className="app-shell">
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">clients.luvtrader.com</p>
-          <h1>LUVTrader</h1>
-          <p className="tagline">A Clear Board Is a Happy Board</p>
-        </div>
-        <div className="login-card">
-          <label htmlFor="role">Preview portal role</label>
-          <select id="role" value={role} onChange={(event) => setRole(event.target.value)}>
-            {demoUsers.map((user) => (
-              <option key={user.role}>{user.role}</option>
-            ))}
-          </select>
-          <small>Demo password for seeded users: password123</small>
-        </div>
-      </section>
-
-      <section className="grid cards-grid">
-        {cards.map((card) => (
-          <article className="metric-card" key={card.label}>
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-            <p>{card.detail}</p>
-          </article>
-        ))}
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">{role} view</p>
-            <h2>{role === 'Client' ? 'My Board' : 'Client boards'}</h2>
-          </div>
-          <span className="api-pill">API: {API_URL}</span>
-        </div>
-        <div className="client-list">
-          {visibleClients.map((client) => (
-            <article className="client-row" key={client.name}>
-              <div>
-                <strong>{client.name}</strong>
-                <p>{client.base} base · {client.balance}</p>
-              </div>
-              <span className={`status status-${client.status.replace(' ', '-')}`}>{client.status}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
-}
-
-createRoot(document.getElementById('root')).render(<App />);
+import React,{useEffect,useState}from'react';import{createRoot}from'react-dom/client';import'./styles.css';
+const API=import.meta.env.VITE_API_URL||'/api';const money=n=>`$${Number(n||0).toFixed(2)}`;const statusClass=s=>'badge '+String(s).toLowerCase().replaceAll(' ','-');
+function App(){const [token,setToken]=useState(localStorage.token||'');const[user,setUser]=useState(JSON.parse(localStorage.user||'null'));const[page,setPage]=useState('dashboard');const[notice,setNotice]=useState('');const auth=(path,opts={})=>fetch(API+path,{...opts,headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`,...opts.headers}}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()});function logout(){localStorage.clear();setToken('');setUser(null)} if(!token)return <Login setToken={setToken} setUser={setUser}/>;return <Shell user={user} page={page} setPage={setPage} logout={logout} notice={notice}><RoleRouter user={user} page={page} setPage={setPage} auth={auth} setNotice={setNotice}/></Shell>}
+function Login({setToken,setUser}){const[email,setEmail]=useState('admin@luvtrader.com'),[password,setPassword]=useState('password123'),[err,setErr]=useState('');async function submit(e){e.preventDefault();try{let body=new URLSearchParams({username:email,password});let r=await fetch(API+'/auth/login',{method:'POST',body});let d=await r.json();if(!r.ok)throw Error(d.detail||'Login failed');localStorage.token=d.access_token;localStorage.user=JSON.stringify(d.user);setToken(d.access_token);setUser(d.user)}catch(x){setErr(x.message)}}return <main className="login"><section className="login-card"><Brand/><h2>Operations portal login</h2><form onSubmit={submit}><label>Email<input value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{err&&<p className="error">{err}</p>}<button className="primary">Sign in</button></form><p className="hint">Demo: admin@luvtrader.com, ops@luvtrader.com, client@example.com / password123</p></section></main>}
+function Brand(){return <div className="brand"><div className="logo">✈</div><div><h1>LUVTrader</h1><p>A Clear Board Is a Happy Board</p></div></div>}
+function Shell({user,page,setPage,logout,children,notice}){let nav=user.role==='admin'?[['dashboard','Dashboard',"$"],['clients','Clients',"👥"],['financials','Financials',"$"],['messages','Messages',"✉"],['tap','TAP',"✈"],['settings','Settings',"⚙"]]:user.role==='operations'?[['dashboard','Today / Active Boards',"✈"],['boards','Client trip boards',"👥"],['sales','Sold trip log',"$"],['flags','Flags / Issues',"⚑"]]:[['board','My Board',"✈"],['balance','My Balance',"$"],['payments','Payment Instructions',"$"],['messages','Messages',"✉"]];return <><header><Brand/><button onClick={logout} className="ghost">⇥Sign out</button></header><div className="app"><nav>{nav.map(([id,label,Icon])=><button key={id} onClick={()=>setPage(id)} className={page===id?'active':''}><span className="icon">{Icon}</span>{label}</button>)}</nav><main>{notice&&<div className="notice">{notice}</div>}{children}</main></div></>}
+function RoleRouter(p){return p.user.role==='client'?<ClientApp {...p}/>:<AdminOpsApp {...p}/>}
+function useData(auth,path,deps=[]){const[data,setData]=useState(null),[loading,setLoading]=useState(true);useEffect(()=>{setLoading(true);auth(path).then(setData).finally(()=>setLoading(false))},deps);return[data,setData,loading]}
+function AdminOpsApp({user,page,auth,setNotice}){const[clients,setClients,loading]=useData(auth,'/clients'+(user.role==='operations'?'?active_only=true':''),[page]);const[query,setQuery]=useState('');const[client,setClient]=useState(null);const shown=(clients||[]).filter(c=>(c.cwa_name+c.email+c.client_status).toLowerCase().includes(query.toLowerCase()));if(loading)return <Loading/>;if(client)return <ClientDetail client={client} back={()=>setClient(null)} auth={auth} user={user} setNotice={setNotice}/>;if(page==='messages')return <Messages auth={auth} admin/>;if(page==='settings')return <SettingsPage auth={auth} setNotice={setNotice}/>;if(page==='financials')return <Financials clients={clients}/>;if(page==='tap')return <Tap clients={clients} auth={auth} setNotice={setNotice}/>;if(page==='sales')return <Sales auth={auth}/>;if(page==='flags')return <Flags clients={clients}/>;return <><Hero title={user.role==='admin'?'Admin dashboard':'Today / Active Boards'} subtitle="Manage boards, balances, sale activity, and client status."/><Stats clients={clients}/><div className="toolbar"><div className="search">⌕<input placeholder="Search clients" value={query} onChange={e=>setQuery(e.target.value)}/></div>{user.role==='admin'&&<NewClient auth={auth} setClients={setClients}/>}</div><ClientGrid clients={shown} onOpen={setClient}/></>}
+function Hero({title,subtitle}){return <section className="hero"><h2>{title}</h2><p>{subtitle}</p></section>}
+function Stats({clients}){let sold=clients.reduce((a,c)=>a+c.sold_total,0),bal=clients.reduce((a,c)=>a+Math.max(c.balance,0),credit=clients.reduce((a,c)=>a+c.credit_refund_amount,0);return <div className="stats"><Card title="Clients" value={clients.length}/><Card title="Sold total" value={money(sold)}/><Card title="Balance due" value={money(bal)}/><Card title="Credits/refunds" value={money(credit)}/></div>}
+function Card({title,value}){return <div className="card stat"><span>{title}</span><b>{value}</b></div>}
+function ClientGrid({clients,onOpen}){return <div className="grid">{clients.map(c=><button className="card client" onClick={()=>onOpen(c)} key={c.id}><div><h3>{c.cwa_name}</h3><span className={statusClass(c.client_status)}>{c.client_status}</span></div><p>{c.base} • {c.rotation_group} • {c.subscription_type}</p><div className="mini"><span>Paid {money(c.amount_paid)}</span><span>Sold {money(c.sold_total)}</span><b>{c.balance>=0?'Due ':'Credit '}{money(c.balance>=0?c.balance:c.credit_refund_amount)}</b></div>{c.admin_flags?.length>0&&<small className="flag">⚑ {c.admin_flags.join(', ')}</small>}</button>)}</div>}
+function NewClient({auth,setClients}){async function add(){let c={cwa_name:'New Client',legal_name:'New Client',email:`new${Date.now()}@example.com`,client_status:'active'};let d=await auth('/clients',{method:'POST',body:JSON.stringify(c)});setClients(x=>[...x,d])}return <button className="primary" onClick={add}>Add client</button>}
+function ClientDetail({client,back,auth,user,setNotice}){const[c,setC]=useState(client),[trips,setTrips]=useState([]),[sale,setSale]=useState({});useEffect(()=>{auth('/trips?client_id='+c.id).then(setTrips)},[c.id]);async function save(){let d=await auth('/clients/'+c.id,{method:'PUT',body:JSON.stringify(c)});setC(d);setNotice('Client saved. Message triggers were logged if applicable.')}async function sell(t){let amt=prompt('Sale amount',sale[t.id]||t.sale_amount||'150');if(!amt)return;await auth('/trips/'+t.id+'/sell',{method:'POST',body:JSON.stringify({sale_amount:amt})});setTrips(await auth('/trips?client_id='+c.id));setC(await auth('/clients/'+c.id));setNotice('Trip marked sold and balance recalculated.')}let fields=['employee_number','base','cwa_name','legal_name','email','phone','venmo','paypal','zelle','payment_notes','posting_notes','rotation_group','rt_month','reactivation_month','subscription_type','internal_notes'];return <><button className="ghost" onClick={back}>← Back</button><Hero title={c.cwa_name} subtitle={`${c.client_status} • ${c.subscription_type}`}/><Stats clients={[c]}/><section className="card formgrid">{fields.map(f=><label key={f}>{f.replaceAll('_',' ')}<input value={c[f]||''} onChange={e=>setC({...c,[f]:e.target.value})}/></label>)}<label>Status<select value={c.client_status} onChange={e=>setC({...c,client_status:e.target.value})}>{['active','TAP','TAP retainer','paused','single month','assisted','cancelled'].map(s=><option>{s}</option>)}</select></label><label>Monthly estimate<input type="number" value={c.monthly_estimate} onChange={e=>setC({...c,monthly_estimate:+e.target.value})}/></label><label>Amount paid<input type="number" value={c.amount_paid} onChange={e=>setC({...c,amount_paid:+e.target.value})}/></label><label>Admin flags<input value={(c.admin_flags||[]).join(', ')} onChange={e=>setC({...c,admin_flags:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)})}/></label><button className="primary" onClick={save}>Save client</button></section><h2>Trip board</h2><TripTable trips={trips} sell={user.role!=='client'?sell:null}/><Messages auth={auth} clientId={c.id}/></>}
+function TripTable({trips,sell}){return <div className="table">{trips.length===0?<Empty text="No trips yet."/>:trips.map(t=><div className="row" key={t.id}><b>{t.trip_date}</b><span>{t.trip_type}</span><span className={statusClass(t.status)}>{t.status}</span><span>{money(t.sale_amount)}</span>{sell&&t.status!=='sold'&&<button className="primary small" onClick={()=>sell(t)}>Mark sold</button>}</div>)}</div>}
+function Financials({clients}){return <><Hero title="Financials" subtitle="Full financial picture across all clients."/><Stats clients={clients}/><ClientGrid clients={clients} onOpen={()=>{}}/></>}
+function Tap({clients,auth,setNotice}){async function send(){let r=await auth('/messages/tap-offer',{method:'POST'});setNotice(`Created ${r.length} TAP retainer offer previews.`)}return <><Hero title="TAP management" subtitle="TAP boards are inactive and hidden from operations rotation."/><button className="primary" onClick={send}>Send TAP retainer offer to eligible clients</button><ClientGrid clients={clients.filter(c=>String(c.client_status).includes('TAP')||c.client_status==='paused')} onOpen={()=>{}}/></>}
+function Sales({auth}){const[s]=useData(auth,'/sales',[]);return <><Hero title="Sold trip log" subtitle="Running total after each sale."/><div className="table">{(s||[]).map(x=><div className="row"><b>{new Date(x.date_sold).toLocaleString()}</b><span>{x.client_id.slice(0,8)}</span><span>{money(x.amount_sold_for)}</span><b>Total {money(x.running_total_after_sale)}</b></div>)}</div></>}
+function Flags({clients}){return <><Hero title="Flags / Issues" subtitle="Missing data, payments, and unusual situations."/><ClientGrid clients={clients.filter(c=>c.admin_flags?.length)} onOpen={()=>{}}/></>}
+function Messages({auth,clientId}){const[m]=useData(auth,'/messages'+(clientId?'?client_id='+clientId:''),[clientId]);return <section><Hero title="Messages" subtitle="Preview, draft, and sent message log."/><div className="grid">{(m||[]).map(x=><article className="card"><span className={statusClass(x.status)}>{x.status}</span><h3>{x.subject}</h3><p>{x.body}</p><small>{x.message_type} • {x.triggered_by}</small></article>)}</div></section>}
+function SettingsPage({auth,setNotice}){const[s,setS]=useData(auth,'/settings',[]);if(!s)return <Loading/>;async function save(){await auth('/settings',{method:'PUT',body:JSON.stringify(s)});setNotice('Settings saved.')}return <><Hero title="Settings / Templates" subtitle="Email mode, payment instructions, instant send toggles, templates."/><section className="card"><h3>Payment instructions</h3>{Object.keys(s.payment_instructions).map(k=><label>{k}<input value={s.payment_instructions[k]} onChange={e=>setS({...s,payment_instructions:{...s.payment_instructions,[k]:e.target.value}})}/></label>)}<h3>Instant send toggles</h3>{Object.keys(s.instant_send_toggles).map(k=><label className="check"><input type="checkbox" checked={s.instant_send_toggles[k]} onChange={e=>setS({...s,instant_send_toggles:{...s.instant_send_toggles,[k]:e.target.checked}})}/>{k}</label>)}<button className="primary" onClick={save}>Save settings</button></section></>}
+function ClientApp({page,auth,user}){const[c,setC]=useData(auth,'/clients/'+user.linked_client_id,[]);const[t]=useData(auth,'/trips',[]);if(!c)return <Loading/>;if(page==='messages')return <Messages auth={auth}/>;if(page==='payments')return <><Hero title="Payment Instructions" subtitle="Use your preferred method and include your employee number."/><div className="stats"><Card title="Venmo" value={c.venmo}/><Card title="PayPal" value={c.paypal}/><Card title="Zelle" value={c.zelle}/></div><p className="card">{c.payment_notes}</p></>;if(page==='balance')return <><Hero title="My Balance" subtitle="Estimate minus paid minus sold total."/><Stats clients={[c]}/></>;return <><Hero title="My Board" subtitle="Your active and sold trips."/><Stats clients={[c]}/><TripTable trips={t||[]}/></>}
+function Loading(){return <div className="card">Loading…</div>}function Empty({text}){return <div className="empty">{text}</div>}
+createRoot(document.getElementById('root')).render(<App/>);
