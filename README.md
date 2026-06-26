@@ -88,16 +88,18 @@ See `backend/.env.example`.
 1. Provision MongoDB Atlas or a managed Mongo-compatible database.
 2. Deploy FastAPI with `uvicorn main:app --host 0.0.0.0 --port $PORT` behind HTTPS.
 3. Deploy the Vite build (`npm run build`) to static hosting.
-4. Set `VITE_API_URL` to the public backend `/api` URL.
+4. Set `VITE_API_URL` for your deployment target; see the Vercel deployment notes below for bundled-service routing.
 5. Set a strong `JWT_SECRET` and keep `EMAIL_MODE=preview` until email delivery is tested.
 6. Run `/api/seed` only in staging/demo environments, not production.
 
 
-### Vercel multi-service deployment
+### Vercel deployment
 
-This repository has two services: the Vite React app in `frontend/` and the FastAPI app in `backend/`. Vercel requires the root `vercel.json` multi-service configuration for this layout: `frontend` is mounted at `/`, and `backend` is mounted at `/_/backend`.
+This repository contains multiple deployable services, so the root `vercel.json` uses Vercel's `experimentalServices` configuration. The Vite React frontend is served from `frontend/` at `/`, and the FastAPI backend is served from `backend/` at `/_/backend`.
 
-Set `VITE_API_URL` in Vercel project environment variables to the backend route exposed by your deployment, for example `/_/backend/api` for the bundled Vercel service or `https://api.luvtrader.com/api` if the FastAPI backend is hosted separately.
+For the bundled Vercel deployment, set `VITE_API_URL=/_/backend/api` so the frontend calls the backend service mounted by `vercel.json`. If the FastAPI backend is hosted separately, set `VITE_API_URL` to that public backend URL instead, for example `https://api.luvtrader.com/api`.
+
+If you ever deploy only the frontend as its own Vercel project, set that Vercel project's root directory to `frontend/` and still configure `VITE_API_URL` to point at the separately hosted FastAPI backend.
 
 ## DNS for clients.luvtrader.com
 
